@@ -7,17 +7,30 @@ int main(int argc, char **argv)
     GHReleaseBridge Bridge(
 		    "antony-jr",
 		    "QArchive",
-		    "v0.0.2",
+		    "v0.0.1",
 		    "QArchive-{version}.tar.gz",
 		    "./",
-		    false
+		    true
     );
 
 
-    QObject::connect(&Bridge , &GHReleaseBridge::updatesList ,
-    [&](QVector<GHPackageUpdate> &list)
+
+    QObject::connect(&Bridge , &GHReleaseBridge::updatesInstalled,
+    [&](){
+	qDebug() << "Successfully Installed Update!";
+	app.quit();
+	return;
+    });
+    QObject::connect(&Bridge , &GHReleaseBridge::updatesDownloaded,
+    [&](){
+	qDebug() << "Updates Downloaded Successfully!";
+	qDebug() << "Starting installation... ";
+	Bridge.InstallUpdates();
+    });
+    QObject::connect(&Bridge , &GHReleaseBridge::updatesLatest ,
+    [&](QStringList update)
     {
-    	if(list.isEmpty())
+    	if(update.isEmpty())
 	{
 		qDebug() << "No Updates Available Dude!";
 		app.quit();
@@ -25,11 +38,8 @@ int main(int argc, char **argv)
 	}
 
 	qDebug() << "New Updates Available!";
-
-	for(int i = 0; i < list.size() ; ++i)
-	{
-		qDebug() << "Download Link:: " << list.at(i).downloadLink;
-	}
+	qDebug() << "Installing " << update.at(GH_REPO) << " Version " << update.at(GH_VERSION);
+	Bridge.DownloadUpdates();
     });
 
     Bridge.CheckForUpdates();

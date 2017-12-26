@@ -32,7 +32,7 @@
  * -----------------------------------------------------------------------------
  *  @filename           : GHReleaseBridge.hpp
  *  @description        : A simple Github Release Bridge to Download latest
- *  			  release and update them Automatically ? , writen
+ *  			  release and update them Automatically , writen
  *  			  in C++ using Qt5. Best suitable for your Qt Project
  *  			  which requires Autoupdate on new release!
  * -----------------------------------------------------------------------------
@@ -52,14 +52,12 @@
 #define NETWORK_ERROR -1
 
 /*
- * Package update structure.
+ * Package update helper codes for QStringList.
 */
-typedef struct {
-	QString username;
-	QString repo;
-	QString version;
-	QUrl 	downloadLink;
-} GHPackageUpdate;
+#define GH_USERNAME	 0
+#define GH_REPO     	 1
+#define GH_VERSION  	 2
+#define GH_DOWNLOAD_LINK 3
 
 /*
  * Class GHReleaseBridge  <- Inherits QObject.
@@ -84,204 +82,308 @@ typedef struct {
 */
 class GHReleaseBridge : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	explicit GHReleaseBridge(QObject *p = NULL)
-	{ 
-	}
+    explicit GHReleaseBridge(QObject *p = NULL)
+    {
+        connect(&DownloadManager, &QEasyDownloader::Error,
+        [&](QNetworkReply::NetworkError errorCode, QUrl url, QString fileName) {
+            (void)url; // These are useless anyways!
+            (void)fileName;
+            (void)errorCode;
 
-	explicit GHReleaseBridge(
-			const QString &username,
-			const QString &repo,
-			const QString &version,
-			const QString &assetFormat,
-			const QString &installationPath,
-			bool debug
-	) 
-	 	: QObject(NULL),
-		  username(username),
-		  repo(repo),
-		  version(version),
-		  assetFormat(assetFormat),
-		  installationPath(installationPath),
-		  debug(debug)
-		  
-	{
-		// Show configuration
-		showConfiguration();
-	}
+            if(debug) {
+                qDebug() << "GHReleaseBridge::Cannot connect with github.";
+            }
+            emit error(NETWORK_ERROR, "cannot connect with github.");
+            return;
+        });
 
-	void setConfiguration(
-                        const QString &username,
-                        const QString &repo,
-                        const QString &version,
-			const QString &assetFormat,
-                        const QString &installationPath,
-                        bool debug
-        )
-	{
-		this->username = username;
-		this->repo = repo;
-		this->version = version;
-		this->assetFormat = assetFormat;
-		this->installationPath = installationPath;
-		this->debug |= debug;
-		showConfiguration();
-		return;
-	}
+    }
 
-	void showConfiguration()
-	{
-		if(debug){
-		qDebug() << "**** Configuration ****";
-		qDebug() << "Username/Organization:: " << ((username.isEmpty()) ? "Empty!" : username);
-		qDebug() << "Repo                 :: " << ((repo.isEmpty()) ? "Empty!" : repo);
-		qDebug() << "Version/Tag	  :: " << ((version.isEmpty()) ? "Empty!" : version);
-		qDebug() << "Installation Path    :: " << ((installationPath.isEmpty()) ? "Empty!" : installationPath);
-		qDebug() << "Debug                :: True";
-		qDebug() << "***********************";
-		}
-		return;
-	}
+    explicit GHReleaseBridge(
+        const QString &username,
+        const QString &repo,
+        const QString &version,
+        const QString &assetFormat,
+        const QString &installationPath,
+        bool debug
+    )
+        : QObject(NULL),
+          username(username),
+          repo(repo),
+          version(version),
+          assetFormat(assetFormat),
+          installationPath(installationPath),
+          debug(debug)
 
-	~GHReleaseBridge() { }
+    {
+        connect(&DownloadManager, &QEasyDownloader::Error,
+        [&](QNetworkReply::NetworkError errorCode, QUrl url, QString fileName) {
+            (void)url; // These are useless anyways!
+            (void)fileName;
+            (void)errorCode;
+
+            if(debug) {
+                qDebug() << "GHReleaseBridge::Cannot connect with github.";
+            }
+            emit error(NETWORK_ERROR, "cannot connect with github.");
+            return;
+        });
+
+        // Show configuration
+        showConfiguration();
+    }
+
+    void setConfiguration(
+        const QString &username,
+        const QString &repo,
+        const QString &version,
+        const QString &assetFormat,
+        const QString &installationPath,
+        bool debug
+    )
+    {
+        this->username = username;
+        this->repo = repo;
+        this->version = version;
+        this->assetFormat = assetFormat;
+        this->installationPath = installationPath;
+        this->debug |= debug;
+        showConfiguration();
+        return;
+    }
+
+    void showConfiguration()
+    {
+        if(debug) {
+            qDebug() << "**** Configuration ****";
+            qDebug() << "Username/Organization:: " << ((username.isEmpty()) ? "Empty!" : username);
+            qDebug() << "Repo                 :: " << ((repo.isEmpty()) ? "Empty!" : repo);
+            qDebug() << "Version/Tag	      :: " << ((version.isEmpty()) ? "Empty!" : version);
+            qDebug() << "Installation Path    :: " << ((installationPath.isEmpty()) ? "Empty!" : installationPath);
+            qDebug() << "Debug                :: True";
+            qDebug() << "***********************";
+        }
+        return;
+    }
+
+    ~GHReleaseBridge() { }
 
 private slots:
-	
-	void CheckGitHubReleases(const QString &content)
-        {
-		QJsonDocument jsonResponse = QJsonDocument::fromJson(content.toUtf8());
-		QJsonObject jsonObject = jsonResponse.object();
-		QJsonArray assetsArray = jsonObject["assets"].toArray();
-		QString version = jsonObject["tag_name"].toString();
-		QString toDownload(assetFormat); toDownload.replace("{version}" , version);
-		QString downloadLink;
-		QVector<QJsonObject> assets;
 
-		if(debug)
-		{
-			qDebug() << "GHReleaseBridge::Latest Version:: " << version;
-			qDebug() << "GHReleaeeBrdige::Asset Required:: " << toDownload;
-		}
+    void CheckGitHubReleases(const QString &content)
+    {
+        QJsonDocument jsonResponse = QJsonDocument::fromJson(content.toUtf8());
+        QJsonObject jsonObject = jsonResponse.object();
+        QJsonArray assetsArray = jsonObject["assets"].toArray();
+        QString version = jsonObject["tag_name"].toString();
+        QString toDownload(assetFormat);
+        toDownload.replace("{version}", version);
+        QString downloadLink;
+        QVector<QJsonObject> assets;
 
-		if(this->version == version)
-		{
-			if(debug)
-			{
-				qDebug() << "GHReleaseBridge::No new updates available.";
-			}
-			emit updatesList(Updates);
-			return;
-		}
-
-		// Parse the array in the assets vector!
-		foreach (const QJsonValue &value, assetsArray) {
-			assets.push_back(value.toObject());
-		}
-
-		for(int i = 0; i < assets.size(); ++i){
-			if(debug){
-				qDebug() << "GHReleaseBridge::Checking Asset::" << assets.at(i)["name"].toString();
-			}
-			if(assets.at(i)["name"].toString() == toDownload)
-			{
-				downloadLink = assets.at(i)["browser_download_url"].toString();
-				if(debug)
-                                {
-                                        qDebug() << "GHReleaseBridge::Latest Package::" << downloadLink;
-                                }
-				break;
-			}
-		}
-
-		// Build Update Structure and push it!
-		GHPackageUpdate node;
-		node.username = this->username;
-		node.repo     = this->repo;
-		node.version     = version;
-		node.downloadLink = downloadLink;
-		Updates.push_back(node);
-
-		disconnect(&DownloadManager , SIGNAL(GetResponse(const QString&)) ,
-                           this ,SLOT(CheckGitHubReleases(const QString&)));
-
-		emit updatesList(Updates);
-                return;
+        if(debug) {
+            qDebug() << "GHReleaseBridge::Latest Version:: " << version;
+            qDebug() << "GHReleaeeBrdige::Asset Required:: " << toDownload;
         }
 
-	bool isEmptyConfiguration()
-	{
-		return (
-			username.isEmpty() ||
-			repo.isEmpty() ||
-			version.isEmpty() ||
-			assetFormat.isEmpty() ||
-			installationPath.isEmpty()
-		       );
-	}
+        if(this->version == version) {
+            if(debug) {
+                qDebug() << "GHReleaseBridge::No new updates available.";
+            }
+            emit updatesLatest(Updates);
+            return;
+        }
+
+        // Parse the array in the assets vector!
+        foreach (const QJsonValue &value, assetsArray) {
+            assets.push_back(value.toObject());
+        }
+
+        for(int i = 0; i < assets.size(); ++i) {
+            if(debug) {
+                qDebug() << "GHReleaseBridge::Checking Asset::" << assets.at(i)["name"].toString();
+            }
+            if(assets.at(i)["name"].toString() == toDownload) {
+                downloadLink = assets.at(i)["browser_download_url"].toString();
+                if(debug) {
+                    qDebug() << "GHReleaseBridge::Latest Package::" << downloadLink;
+                }
+                break;
+            }
+        }
+
+        // append the latest update
+        Updates << this->username
+                << this->repo
+                << version
+                << downloadLink;
+
+        disconnect(&DownloadManager, SIGNAL(GetResponse(const QString&)),
+                   this,SLOT(CheckGitHubReleases(const QString&)));
+
+        emit updatesLatest(Updates);
+        return;
+    }
+
+    bool isEmptyConfiguration()
+    {
+        return (
+                   username.isEmpty() ||
+                   repo.isEmpty() ||
+                   version.isEmpty() ||
+                   assetFormat.isEmpty() ||
+                   installationPath.isEmpty()
+               );
+    }
 
 public slots:
-	void CheckForUpdates()
-	{
-		if(debug){
-			qDebug() << "GHReleaseBridge::Checking for updates.";
-			qDebug() << "GHReleaseBridge::Checking the releases for latest assets.";
-		}
+    void CheckForUpdates()
+    {
+        if(debug) {
+            qDebug() << "GHReleaseBridge::Checking for updates.";
+            qDebug() << "GHReleaseBridge::Checking the releases for latest assets.";
+        }
 
-		if(isEmptyConfiguration())
-		{
-			if(debug)
-			{
-				qDebug() << "GHReleaseBridge::Empty Configuration given.";
-			}
-			return;
-		}
+        if(isEmptyConfiguration()) {
+            if(debug) {
+                qDebug() << "GHReleaseBridge::Empty Configuration given.";
+            }
+            return;
+        }
 
-		/*
-		 * Build the URL.
-		*/
-		QUrl latestRelease(
-				QString("https://api.github.com/repos/") +
-				username +
-				QString("/") +
-				repo +
-				QString("/releases/latest")
-		);
+        /*
+         * Build the URL.
+        */
+        QUrl latestRelease(
+            QString("https://api.github.com/repos/") +
+            username +
+            QString("/") +
+            repo +
+            QString("/releases/latest")
+        );
 
-		connect(&DownloadManager , SIGNAL(GetResponse(const QString&)) , 
-			this ,SLOT(CheckGitHubReleases(const QString&)));
+        connect(&DownloadManager, SIGNAL(GetResponse(const QString&)),
+                this,SLOT(CheckGitHubReleases(const QString&)));
 
-		connect(&DownloadManager , &QEasyDownloader::Error ,
-		[&](QNetworkReply::NetworkError errorCode, QUrl url, QString fileName)
-		{
-			(void)url; // These are useless anyways!
-			(void)fileName;
-			(void)errorCode;
+        DownloadManager.Debug(debug);
+        DownloadManager.Get(latestRelease);
+        return;
+    }
 
-			if(debug)
-			{
-				qDebug() << "GHReleaseBridge::Cannot connect with github.";
-			}	
-			emit error(NETWORK_ERROR , "cannot connect with github.");
-			return;
-		});
+    void DownloadUpdates()
+    {
+        if(Updates.isEmpty() || TempFile != NULL) {
+            return;
+        }
 
-		DownloadManager.Debug(debug);
-		DownloadManager.Get(latestRelease);
-		return;
-	}
+        connect(&DownloadManager, &QEasyDownloader::Finished,
+        [&]() {
+		emit updatesDownloaded();
+        });
+
+        connect(&DownloadManager, &QEasyDownloader::DownloadProgress,
+                [&](qint64 bytesReceived,
+                    qint64 bytesTotal,
+                    int percent,
+                    double speed,
+                    const QString &unit,
+                    const QUrl &url,
+        const QString &fileName) {
+            emit updatesDownloadProgress(bytesReceived, bytesTotal, percent, speed, unit, url,fileName);
+            return;
+        });
+
+        DownloadManager.Debug(debug);
+	DownloadManager.ResumeDownloads(false);
+
+        TempFile = new QTemporaryFile;
+        TempFile->open();
+	
+	DownloadManager.Download(Updates.at(GH_DOWNLOAD_LINK) , TempFile->fileName());
+        return;
+    }
+
+    void InstallUpdates()
+    {
+        if(TempFile == NULL) {
+            return;
+        }
+        connect(&Archiver, &QArchive::Extractor::status,
+        [&](const QString& Archive,const QString& file) {
+            (void)Archive;
+            emit updatesInstalling(file);
+            return;
+        });
+
+        connect(&Archiver, &QArchive::Extractor::error,
+        [&](short errorCode, const QString& Archive) {
+            emit error(errorCode, Archive);
+            return;
+        });
+
+        connect(&Archiver, &QArchive::Extractor::finished,
+        [&]() {
+            TempFile->remove();
+            TempFile = NULL; // Dereference
+            emit updatesInstalled();
+            return;
+        });
+        Archiver.addArchive(TempFile->fileName());
+        Archiver.setDestination(this->installationPath);
+        Archiver.start();
+        return;
+    }
+
+    void AbortDownload()
+    {
+        DownloadManager.Pause();
+        TempFile->remove();
+        TempFile = NULL;
+        emit DownloadAborted();
+        return;
+    }
+
+    void AbortInstallation()
+    {
+        if(Archiver.isRunning()) {
+            Archiver.requestInterruption();
+            Archiver.wait();
+        }
+        TempFile->remove();
+        TempFile = NULL;
+        Updates.clear();
+        emit InstallationAborted();
+        return;
+    }
+
 signals:
-	void error(short , const QString&);
-	void updatesList(QVector<GHPackageUpdate>&);
+    void error(short, const QString&);
+    void updatesLatest(const QStringList&);
+    void updatesDownloadProgress(qint64 bytesReceived,
+                                 qint64 bytesTotal,
+                                 int percent,
+                                 double speed,
+                                 const QString &unit,
+                                 const QUrl &url,
+                                 const QString &fileName);
+    void updatesInstalling(const QString&);
+    void updatesDownloaded();
+    void updatesInstalled();
+    void DownloadAborted();
+    void InstallationAborted();
+
 private:
-	QString username,
-		repo,
-		version,
-		assetFormat,
-		installationPath;
-	bool debug = false;
-	QVector<GHPackageUpdate> Updates;
-	QArchive::Extractor Archiver;
-	QEasyDownloader DownloadManager;
-};
+    QString username,
+            repo,
+            version,
+            assetFormat,
+            installationPath;
+    bool debug = false;
+    QTemporaryFile *TempFile = NULL;
+    QStringList Updates;
+    QArchive::Extractor Archiver;
+    QEasyDownloader DownloadManager;
+}; // Class GHReleaseBridge Ends
 #endif // GH_RELEASE_BRIDGE_HPP_INCLUDED
