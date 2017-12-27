@@ -280,7 +280,7 @@ public slots:
 
         connect(&DownloadManager, &QEasyDownloader::Finished,
         [&]() {
-		emit updatesDownloaded();
+            emit updatesDownloaded();
         });
 
         connect(&DownloadManager, &QEasyDownloader::DownloadProgress,
@@ -296,12 +296,12 @@ public slots:
         });
 
         DownloadManager.Debug(debug);
-	DownloadManager.ResumeDownloads(false);
+        DownloadManager.ResumeDownloads(false);
 
         TempFile = new QTemporaryFile;
         TempFile->open();
-	
-	DownloadManager.Download(Updates.at(GH_DOWNLOAD_LINK) , TempFile->fileName());
+
+        DownloadManager.Download(Updates.at(GH_DOWNLOAD_LINK), TempFile->fileName());
         return;
     }
 

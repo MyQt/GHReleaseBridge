@@ -1,5 +1,5 @@
 #include <QCoreApplication>
-#include "GHReleaseBridge.hpp"
+#include "../../GHReleaseBridge.hpp"
 
 int main(int argc, char **argv)
 {
