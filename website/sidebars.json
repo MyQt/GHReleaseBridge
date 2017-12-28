@@ -1,0 +1,13 @@
+{
+  "docs": {
+    "Getting Started": [ 
+	   "Installation"
+    ],
+    "Guides" : [
+	   "UsingReleaseBridge"
+    ],
+    "API" : [
+	   "GHReleaseBridgeErrorCodes"
+    ]
+  }
+}
