@@ -46,20 +46,6 @@
 
 
 /*
- * Error Codes
- * -----------
-*/
-#define NETWORK_ERROR -1
-
-/*
- * Package update helper codes for QStringList.
-*/
-#define GH_USERNAME	 0
-#define GH_REPO     	 1
-#define GH_VERSION  	 2
-#define GH_DOWNLOAD_LINK 3
-
-/*
  * Class GHReleaseBridge  <- Inherits QObject.
  * ---------------------
  *
@@ -71,20 +57,75 @@
  *  	GHReleaseBridge(QObject *p = NULL)  - Sets parent  if the user needs it.
  *  	GHReleaseBridge(
  *  			const QString &username,
- *                      const QString &description,
  *                      const QString &repo,
  *                      const QString &version,
  *                      const QString &installationPath,
  *                      bool debug
  *      )				    - Sets the configuration for GHReleaseBridge.
  *
+ *      void setConfiguration(
+ *                      const QString &username,
+ *                      const QString &repo,
+ *                      const QString &version,
+ *                      const QString &installationPath,
+ *                      bool debug
+ *      )                                   - Sets the configuration for GHReleaseBridge.
+ *
+ * 	void showConfiguration(void)	    - Shows the configuration.
+ *
+ *
+ *  Slots:
+ *
+ * 	void CheckForUpdates(void)	    - Checks for updates , if new update exists emits
+ * 					      void updatesLatest(const QStringList& update).
+ *
+ * 	void DownloadUpdates(void)	    - Downloads Updates if there is any packages registered
+ * 					      in this class's cache!
+ * 					      emits updatesDownloaded(void) when download is finished.
+ *
+ * 	void InstallUpdates(void)	    - Installs Updates if Downloaded in the temp folder.
+ * 					      emits updatesInstalled(void) when update is done.
+ *
+ * 	void AbortDownload(void)	    - Aborts any download. emits DownloadAborted() when its successful.
+ *
+ * 	void AbortInstallation(void)	    - Aborts the current installation if in process.
+ * 					      emits InstallationAborted() when its successful.
+ *
+ *  Signals:
+ *  	void error(short errorCode, const QString& what) - Emitted when something goes wrong.
+ *  	void updatesLatest(const QStringList& update) 	 - Emitted when CheckForUpdates() is finished.
+ *  	void updatesDownloadProgress(qint64 bytesReceived,
+ *                               qint64 bytesTotal,
+ *                               int percent,
+ *                               double speed,
+ *                               const QString &unit,
+ *                               const QUrl &url,
+ *                               const QString &fileName) - Emitted when updates is beign downloaded.
+ *	void updatesInstalling(const QString& update)     - Emitted when a single update is installing.
+ *	void updatesDownloaded()			  - Emitted when DownloadUpdates() is finished.
+ *	void updatesInstalled()				  - Emitted when InstallUpdates() is finished.
+ *	void DownloadAborted()				  - Emitted when AbortDownload() is successful.
+ *	void InstallationAborted()			  - Emitted when AbortInstallation() is successful.
  *
 */
 class GHReleaseBridge : public QObject
 {
     Q_OBJECT
 public:
+
+    /*
+     * Package update helper codes for QStringList.
+    */
+    enum {
+        GH_USERNAME,
+        GH_REPO,
+        GH_VERSION,
+        GH_DOWNLOAD_LINK,
+        NETWORK_ERROR = -1 // except this , its a error code!
+    };
+
     explicit GHReleaseBridge(QObject *p = NULL)
+        : QObject(p)
     {
         connect(&DownloadManager, &QEasyDownloader::Error,
         [&](QNetworkReply::NetworkError errorCode, QUrl url, QString fileName) {
@@ -338,6 +379,9 @@ public slots:
 
     void AbortDownload()
     {
+        if(TempFile == NULL) {
+            return;
+        }
         DownloadManager.Pause();
         TempFile->remove();
         TempFile = NULL;
@@ -350,6 +394,8 @@ public slots:
         if(Archiver.isRunning()) {
             Archiver.requestInterruption();
             Archiver.wait();
+        } else {
+            return;
         }
         TempFile->remove();
         TempFile = NULL;

@@ -38,7 +38,8 @@ int main(int argc, char **argv)
 	}
 
 	qDebug() << "New Updates Available!";
-	qDebug() << "Installing " << update.at(GH_REPO) << " Version " << update.at(GH_VERSION);
+	qDebug() << "Installing " << update.at(GHReleaseBridge::GH_REPO) 
+		 << " Version " << update.at(GHReleaseBridge::GH_VERSION);
 	Bridge.DownloadUpdates();
     });
 
