@@ -40,9 +40,65 @@
 #if !defined(GH_RELEASE_BRIDGE_HPP_INCLUDED)
 #define GH_RELEASE_BRIDGE_HPP_INCLUDED
 #include <QtCore>
-
 #include "QArchive/QArchive.hpp"
 #include "QEasyDownloader/QEasyDownloader.hpp"
+
+/*
+ * Class GHReleaseBridge  <- Inherits QObject
+ * --------------------
+ *
+ *  Public Functions:
+ *	explicit GHReleaseBridge(QObject *p = NULL)			- Only Constructs and sets the QObject Parent.
+ *
+ *	explicit GHReleaseBridge(
+ *      const QString &username,
+ *      const QString &repo,
+ *      const QString &version,
+ *      const QString &assetFormat,
+ *      const QString &installationPath,
+ *      bool debug
+ *  	)								- Constructs and sets the configuration.
+ *
+ *	explicit GHReleaseBridge(const QJsonDocument& configuration) 	- Constructs and sets the configuration.
+ *
+ *	explicit GHReleaseBridge(const QJsonObject& configuration)	- Constructs and sets the configuration.
+ *
+ *	void setConfiguration(const QJsonDocument& configuration)	- Only sets the configuration.
+ *
+ *	void showConfiguration()					- Prints the Configuration if debug is enabled.
+ *
+ *
+ *  Slots:
+ *  	void CheckForUpdates()						- Checks for updates.
+ *  									  emits updatesLatest(QJsonDocument).
+ *  	void DownloadUpdates()						- Downloads Updates to Temp dir.
+ *  									  emits updatesDownloaded(void).
+ *  	void InstallUpdates()						- Install Updates.
+ *  									  emits newConfiguration(QJsonDocument) and
+ *  									  updatesInstalled(void).
+ *
+ * 	void AbortDownload()						- Aborts current downloads.
+ *
+ * 	void AbortInstallation()					- Aborts current installation.
+ *
+ *  Signals:
+ *  	void error(short, const QString&)				- Emitted when something goes wrong.
+ *  	void updatesLatest(const QJsonDocument&)			- Emitted when CheckForUpdates is finished.
+ *  	void updatesDownloadProgress(qint64 bytesReceived,
+ *                               qint64 bytesTotal,
+ *                               int percent,
+ *                               double speed,
+ *                               const QString &unit,
+ *                               const QUrl &url,
+ *                               const QString &fileName)		- Progress for Downloading of Updates.
+ *      void updatesInstalling(const QString&)				- Progress or Status for InstallUpdates.
+ *      void newConfiguration(const QJsonDocument& newConfig)		- Emitted when InstallUpdates is finished.
+ *
+ * 	void updatesDownloaded()					- Emitted DownloadUpdates is finished.
+ * 	void updatesInstalled()						- Emitted when InstallUpdates is finished.
+ * 	void DownloadAborted()						- Emitted when AbortDownload is successfull.
+ * 	void InstallationAborted()					- Emitted when AbortInstallation is successfull.
+*/
 
 class GHReleaseBridge : public QObject
 {
@@ -359,16 +415,16 @@ public slots:
             auto root = configuration.object();
             auto rootU = Updates.object();
             QJsonObject newConfig {
-                {"username" , root["username"]},
-                {"repo"     , root["repo"]},
-                {"version"  , rootU["version"]},
-                {"installationPath" , root["installationPath"]},
-                {"assetFormat" , root["assetFormat"]},
-                {"debug"    , root["debug"]}
+                {"username", root["username"]},
+                {"repo", root["repo"]},
+                {"version", rootU["version"]},
+                {"installationPath", root["installationPath"]},
+                {"assetFormat", root["assetFormat"]},
+                {"debug", root["debug"]}
             };
-            
+
             configuration = QJsonDocument(newConfig);
-            
+
             // emit signals
             emit updatesInstalled();
             emit newConfiguration(configuration);
