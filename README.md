@@ -9,8 +9,7 @@
 # GitHub Release Bridge [![GitHub issues](https://img.shields.io/github/issues/antony-jr/GHReleaseBridge.svg?style=flat-square)](https://github.com/antony-jr/GHReleaseBridge/issues) [![GitHub forks](https://img.shields.io/github/forks/antony-jr/GHReleaseBridge.svg?style=flat-square)](https://github.com/antony-jr/GHReleaseBridge/network) [![GitHub stars](https://img.shields.io/github/stars/antony-jr/GHReleaseBridge.svg?style=flat-square)](https://github.com/antony-jr/GHReleaseBridge/stargazers) [![GitHub license](https://img.shields.io/github/license/antony-jr/GHReleaseBridge.svg?style=flat-square)](https://github.com/antony-jr/GHReleaseBridge/blob/master/LICENSE)
 
 Have you ever wanted to **AutoUpdate** your app when you just **make a new release on github** ? Well , **GHReleaseBridge**   
-just does that! This Project was created for the same purpose as **[QInstallerBridge](https://github.com/antony-jr/QInstallerBridge)**  , This small **header** simply Download's the latest release from your configured repo and updates them **Automatically to all users**  who have **installed your app**, writen in C++ using Qt5. Best suitable for your **Qt Projects** which **requires Autoupdate on new   
-release!** :heart:   
+just does that! This Project was created for the same purpose as **[QInstallerBridge](https://github.com/antony-jr/QInstallerBridge)**  , This small **header** simply Download's the latest release from your configured repo and updates them **Automatically to all users**  who have **installed your app**, writen in C++ using Qt5. Best suitable for your **Qt Projects** which **requires Autoupdate on new release!** :heart:   
 
 **Note:** This can be used for all projects that uses **GitHub** as the deployment platform. Not limited to **C++**.
 
