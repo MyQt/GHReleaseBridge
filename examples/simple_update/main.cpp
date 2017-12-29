@@ -4,19 +4,15 @@
 int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
-
-    // This must be read from file!
-    QJsonObject Configuration {
+    GHReleaseBridge Bridge({
         {"username", "antony-jr"},
         {"repo"	, "QArchive"},
         {"version", "0.0.1"},
         {"assetFormat", "QArchive-{version}.tar.gz"},
         {"installationPath", "./"},
         {"debug", false}
-    };
-
-    GHReleaseBridge Bridge(Configuration);
-
+    });
+    
     QObject::connect(&Bridge, &GHReleaseBridge::updatesLatest,
     [&](QJsonDocument Updates) {
         if(Updates.isNull()) {

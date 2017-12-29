@@ -1,13 +1,15 @@
 {
   "docs": {
     "Getting Started": [ 
-	   "Installation"
+	   "Installation",
+	   "AddingGHReleaseBridge"
     ],
     "Guides" : [
 	   "UsingReleaseBridge"
     ],
     "API" : [
-	   "GHReleaseBridgeErrorCodes"
+	   "GHReleaseBridgeErrorCodes",
+	   "ClassGHReleaseBridge"
     ]
   }
 }
