@@ -8,7 +8,7 @@ sidebar_label: Adding to Your Qt Project
 |-----------|------------------------------------------------------------------|
 |  Header:  | #include "GHReleaseBridge/GHReleaseBridge.hpp"                 |
 |   qmake:  | LIBS += -larchive	                                               |
-|           | QT += core network xml                                           |
+|           | QT += core network xml concurrent                                  |
 |	        | HEADERS += GHReleaseBridge/GHReleaseBridge.hpp                 |
 |           | HEADERS += GHReleaseBridge/QArchive/QArchive.hpp                |
 |           | HEADERS += GHReleaseBridge/QEasyDownloader/QEasyDownloader.hpp  |
@@ -23,7 +23,7 @@ Append these **lines** to your **Qt Project file**.
 
 ```
 LIBS += -larchive
-QT += core network xml
+QT += core network xml concurrent
 HEADERS += GHReleaseBridge/GHReleaseBridge.hpp \
            GHReleaseBridge/QArchive/QArchive.hpp \
            GHReleaseBridge/QEasyDownloader/QEasyDownloader.hpp

@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 TEMPLATE =   app
 TARGET   =   update
 LIBS     += -larchive
-QT       +=  core network
+QT       +=  core network concurrent
 SOURCES  +=  main.cpp 
 HEADERS  +=  GHReleaseBridge/GHReleaseBridge.hpp \
              GHReleaseBridge/QArchive/QArchive.hpp \
@@ -76,7 +76,7 @@ HEADERS  +=  GHReleaseBridge/GHReleaseBridge.hpp \
 ```
  $ mkdir build
  $ cd build
- $ qmake ../simple_update.pro
+ $ qmake ..
  $ make -j4
  $ ./update
  $ # Now you should have a file named GHRelease.json

@@ -452,16 +452,23 @@ public slots:
 
     void AbortInstallation()
     {
+        /*
+         * Thanks to QArchive v0.0.3 ,
+         * this is handled much elegantly!
+        */
+        connect(&Archiver, &QArchive::Extractor::stopped,
+        [&]() {
+            TempFile->remove();
+            TempFile = NULL;
+            Updates = QJsonDocument();
+            emit InstallationAborted();
+        });
+
         if(Archiver.isRunning()) {
-            Archiver.requestInterruption();
-            Archiver.wait();
+            Archiver.stop();
         } else {
             return;
         }
-        TempFile->remove();
-        TempFile = NULL;
-        Updates = QJsonDocument();
-        emit InstallationAborted();
         return;
     }
 
